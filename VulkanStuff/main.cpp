@@ -1,6 +1,4 @@
-#include <exception>
-#include <iostream>
-
+#include "pch.h"
 #include "vkApplication.h"
 
 int main()
