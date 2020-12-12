@@ -3,33 +3,50 @@
 class vkApplication
 {
 public:
-	//Methods
-	void Run();
+    //Methods
+    void Run();
 
 private:
-	//Members
-	VkInstance vkInstance = nullptr;
-	VkDebugUtilsMessengerEXT debugMessenger;
-	GLFWwindow* window = nullptr;
+    //Window
+    GLFWwindow* window = nullptr;
 
-	const uint32_t WINDOW_WIDTH = 800;
-	const uint32_t WINDOW_HEIGHT = 600;
+    const uint32_t WINDOW_WIDTH = 800;
+    const uint32_t WINDOW_HEIGHT = 600;
 
-	const std::vector<const char*> validationLayers = {	"VK_LAYER_KHRONOS_validation"};
+    //VkMembers
+    VkInstance vkInstance = nullptr;
+    VkDebugUtilsMessengerEXT debugMessenger = nullptr;
+
+    VkPhysicalDevice vkPhysicalDevice = nullptr;
+    struct QueueFamilyIndices
+    {
+        std::optional<uint32_t> graphicsFamily;
+        bool IsComplete()
+        {
+            return graphicsFamily.has_value();
+        }
+    };
+
+    //Validation Layers
+    const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
 #ifdef NDEBUG
-	const bool enableValidationLayers = false;
+    const bool validationLayersEnabled = false;
 #else
-	const bool validationLayersEnabled = true;
+    const bool validationLayersEnabled = true;
 #endif
 
-	//Methods
-	bool CheckValidationLayersSupport();
-	std::vector<const char*> GetRequiredExtensions();
-	void SetupDebugMessenger();
-	void InitVulkan();
+    //Methods
+    bool CheckValidationLayersSupport();
+    std::vector<const char*> GetRequiredExtensions();
+    void SetupDebugMessenger();
+    void GetPhysicalDevice();
+    uint32_t GetDeviceScore(const VkPhysicalDevice& vkPhysicalDevice);
+    QueueFamilyIndices FindQueueFamilies(const VkPhysicalDevice& physicalDevice);
+    bool IsDeviceSupportingRequirements(const VkPhysicalDevice& physicalDevice);
+    void InitVulkan();
     void CreateInstance();
-	void InitWindow();
-	void MainLoop();
-	void Cleanup();
+    void InitWindow();
+    void MainLoop();
+    void Cleanup();
 };
