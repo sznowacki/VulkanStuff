@@ -1,19 +1,16 @@
 ﻿#include "pch.h"
 #include "vkApplication.h"
-
-#include <map>
-
 #include "Debug.h"
 
-void vkApplication::Run()
+void vkApplication::run()
 {
-    InitWindow();
-    InitVulkan();
-    MainLoop();
-    Cleanup();
+    initWindow();
+    initVulkan();
+    mainLoop();
+    cleanup();
 }
 
-bool vkApplication::CheckValidationLayersSupport()
+const bool vkApplication::checkValidationLayersSupport() const
 {
     uint32_t validationLayerCount;
     vkEnumerateInstanceLayerProperties(&validationLayerCount, nullptr);
@@ -42,7 +39,7 @@ bool vkApplication::CheckValidationLayersSupport()
     return true;
 }
 
-std::vector<const char*> vkApplication::GetRequiredExtensions()
+const std::vector<const char*> vkApplication::getRequiredExtensions() const
 {
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -57,7 +54,7 @@ std::vector<const char*> vkApplication::GetRequiredExtensions()
     return requiredExtensions;
 }
 
-void vkApplication::SetupDebugMessenger()
+void vkApplication::setupDebugMessenger()
 {
     if(!validationLayersEnabled)
     {
@@ -73,7 +70,7 @@ void vkApplication::SetupDebugMessenger()
     }
 }
 
-void vkApplication::GetPhysicalDevice()
+void vkApplication::findPhysicalDevice()
 {
     uint32_t physicalDeviceCount = 0;
     vkEnumeratePhysicalDevices(vkInstance, &physicalDeviceCount, nullptr);
@@ -92,12 +89,12 @@ void vkApplication::GetPhysicalDevice()
 
     for(const auto& physicalDevice : physicalDevices)
     {
-        int candidateScore = GetDeviceScore(physicalDevice);
+        int candidateScore = getPhysicalDeviceScore(physicalDevice);
         candidates.insert(std::make_pair(candidateScore, physicalDevice));
     }
 
     //TODO: Allow user to choose which GPU to use. Print option list and scores.
-    if(candidates.rbegin()->first > 0 && IsDeviceSupportingRequirements(candidates.rbegin()->second))
+    if(candidates.rbegin()->first > 0 && isDeviceSupportingRequirements(candidates.rbegin()->second))
     {
         vkPhysicalDevice = candidates.rbegin()->second;
     }
@@ -107,12 +104,12 @@ void vkApplication::GetPhysicalDevice()
     }
 }
 
-uint32_t vkApplication::GetDeviceScore(const VkPhysicalDevice& vkPhysicalDevice)
+const uint32_t vkApplication::getPhysicalDeviceScore(const VkPhysicalDevice& physicalDevice) const
 {
     VkPhysicalDeviceProperties physicalDeviceProperties = {};
     VkPhysicalDeviceFeatures physicalDeviceFeatures = {};
-    vkGetPhysicalDeviceProperties(vkPhysicalDevice, &physicalDeviceProperties);
-    vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &physicalDeviceFeatures);
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
 
     //TODO: Evaluate other parameters
     uint32_t score = 0;
@@ -135,7 +132,7 @@ uint32_t vkApplication::GetDeviceScore(const VkPhysicalDevice& vkPhysicalDevice)
     return score;
 }
 
-vkApplication::QueueFamilyIndices vkApplication::FindQueueFamilies(const VkPhysicalDevice& physicalDevice)
+const vkApplication::QueueFamilyIndices vkApplication::GetQueueFamilies(const VkPhysicalDevice& physicalDevice) const
 {
     QueueFamilyIndices queueFamilyIndices = {};
 
@@ -164,23 +161,70 @@ vkApplication::QueueFamilyIndices vkApplication::FindQueueFamilies(const VkPhysi
     return queueFamilyIndices;
 }
 
-bool vkApplication::IsDeviceSupportingRequirements(const VkPhysicalDevice& physicalDevice)
+const bool vkApplication::isDeviceSupportingRequirements(const VkPhysicalDevice& physicalDevice) const
 {
-    QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(physicalDevice);
+    const QueueFamilyIndices queueFamilyIndices = GetQueueFamilies(physicalDevice);
 
     return queueFamilyIndices.IsComplete();
 }
 
-void vkApplication::InitVulkan()
+
+void vkApplication::createLogicalDevice()
 {
-    CreateInstance();
-    SetupDebugMessenger();
-    GetPhysicalDevice();
+    QueueFamilyIndices queueFamilyIndices = GetQueueFamilies(vkPhysicalDevice);
+    float queuePriority = 1.0f;
+
+    VkDeviceQueueCreateInfo deviceQueueCreateInfo
+    {
+        VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+        nullptr,
+        NULL,
+        queueFamilyIndices.graphicsFamily.value(),
+        1,
+        &queuePriority
+    };
+
+    VkPhysicalDeviceFeatures physicalDeviceFeatures = {};
+
+    VkDeviceCreateInfo deviceCreateInfo
+    {
+        VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+        nullptr,
+        NULL,
+        1,
+        &deviceQueueCreateInfo,
+        0,
+        nullptr,
+        0,
+        nullptr,
+        &physicalDeviceFeatures
+    };
+
+    if(validationLayersEnabled)
+    {
+        deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+    }
+
+    if(vkCreateDevice(vkPhysicalDevice, &deviceCreateInfo, nullptr, &vkLogicalDevice) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Logical Device: Failed to create logical device");
+    }
+
+    vkGetDeviceQueue(vkLogicalDevice, queueFamilyIndices.graphicsFamily.value(), 0, &graphicsQueue);
 }
 
-void vkApplication::CreateInstance()
+void vkApplication::initVulkan()
 {
-    if(validationLayersEnabled && !CheckValidationLayersSupport())
+    createInstance();
+    setupDebugMessenger();
+    findPhysicalDevice();
+    createLogicalDevice();
+}
+
+void vkApplication::createInstance()
+{
+    if(validationLayersEnabled && !checkValidationLayersSupport())
     {
         throw std::runtime_error("CreateInstance: Requested validation layers not available!");
     }
@@ -196,7 +240,7 @@ void vkApplication::CreateInstance()
         VK_API_VERSION_1_2
     };
 
-    auto requiredExtensions = GetRequiredExtensions();
+    auto requiredExtensions = getRequiredExtensions();
 
     VkInstanceCreateInfo vkInstanceCreateInfo
     {
@@ -226,7 +270,7 @@ void vkApplication::CreateInstance()
     }
 }
 
-void vkApplication::InitWindow()
+void vkApplication::initWindow()
 {
     glfwInit();
 
@@ -236,7 +280,7 @@ void vkApplication::InitWindow()
     window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr);
 }
 
-void vkApplication::MainLoop()
+void vkApplication::mainLoop()
 {
     while(!glfwWindowShouldClose(window))
     {
@@ -245,8 +289,10 @@ void vkApplication::MainLoop()
 }
 
 
-void vkApplication::Cleanup()
+void vkApplication::cleanup()
 {
+    vkDestroyDevice(vkLogicalDevice, nullptr);
+
     if(validationLayersEnabled)
     {
         DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);

@@ -3,32 +3,17 @@
 class vkApplication
 {
 public:
-    //Methods
-    void Run();
+    void run();
 
 private:
     //Window
     GLFWwindow* window = nullptr;
-
     const uint32_t WINDOW_WIDTH = 800;
     const uint32_t WINDOW_HEIGHT = 600;
-
-    //VkMembers
-    VkInstance vkInstance = nullptr;
     VkDebugUtilsMessengerEXT debugMessenger = nullptr;
 
-    VkPhysicalDevice vkPhysicalDevice = nullptr;
-    struct QueueFamilyIndices
-    {
-        std::optional<uint32_t> graphicsFamily;
-        bool IsComplete()
-        {
-            return graphicsFamily.has_value();
-        }
-    };
-
     //Validation Layers
-    const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
+    const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 
 #ifdef NDEBUG
     const bool validationLayersEnabled = false;
@@ -36,17 +21,41 @@ private:
     const bool validationLayersEnabled = true;
 #endif
 
-    //Methods
-    bool CheckValidationLayersSupport();
-    std::vector<const char*> GetRequiredExtensions();
-    void SetupDebugMessenger();
-    void GetPhysicalDevice();
-    uint32_t GetDeviceScore(const VkPhysicalDevice& vkPhysicalDevice);
-    QueueFamilyIndices FindQueueFamilies(const VkPhysicalDevice& physicalDevice);
-    bool IsDeviceSupportingRequirements(const VkPhysicalDevice& physicalDevice);
-    void InitVulkan();
-    void CreateInstance();
-    void InitWindow();
-    void MainLoop();
-    void Cleanup();
+    //VkMembers
+    VkInstance vkInstance = nullptr;
+    VkPhysicalDevice vkPhysicalDevice = nullptr;
+
+    struct QueueFamilyIndices
+    {
+        std::optional<uint32_t> graphicsFamily;
+        const bool IsComplete() const
+        {
+            return graphicsFamily.has_value();
+        }
+    };
+
+    VkDevice vkLogicalDevice = nullptr;
+    VkQueue graphicsQueue = nullptr;
+
+    //Window
+    void initWindow();
+    const bool checkValidationLayersSupport() const;
+    const std::vector<const char*> getRequiredExtensions() const;
+    void setupDebugMessenger();
+
+    //Physical Device
+    void findPhysicalDevice();
+    const uint32_t getPhysicalDeviceScore(const VkPhysicalDevice& physicalDevice) const;
+    const QueueFamilyIndices GetQueueFamilies(const VkPhysicalDevice& physicalDevice) const;
+    const bool isDeviceSupportingRequirements(const VkPhysicalDevice& physicalDevice) const;
+    
+
+    //Logical Device
+    void createLogicalDevice();
+
+    //Base
+    void initVulkan();
+    void createInstance();
+    void mainLoop();
+    void cleanup();
 };
