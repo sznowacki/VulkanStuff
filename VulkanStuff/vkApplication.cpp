@@ -62,9 +62,9 @@ void vkApplication::setupDebugMessenger()
     }
 
     VkDebugUtilsMessengerCreateInfoEXT vkDebugUtilsMessengerCreateInfo;
-    PopulateDebugMessengerCreateInfo(vkDebugUtilsMessengerCreateInfo);
+    populateDebugMessengerCreateInfo(vkDebugUtilsMessengerCreateInfo);
 
-    if(CreateDebugUtilsMessengerEXT(vkInstance, &vkDebugUtilsMessengerCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+    if(createDebugUtilsMessengerEXT(vkInstance, &vkDebugUtilsMessengerCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS)
     {
         throw std::runtime_error("DebugMessenger: Failed to set up debug messenger!");
     }
@@ -133,7 +133,7 @@ const uint32_t vkApplication::getPhysicalDeviceScore(const VkPhysicalDevice& phy
 }
 
 const vkApplication::QueueFamilyIndices vkApplication::GetQueueFamilies(const VkPhysicalDevice& physicalDevice) const
-{
+{    
     QueueFamilyIndices queueFamilyIndices = {};
 
     uint32_t queueFamilyCount = 0;
@@ -142,12 +142,21 @@ const vkApplication::QueueFamilyIndices vkApplication::GetQueueFamilies(const Vk
     std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilyProperties.data());
 
+    //Present Support
+    VkBool32 presentSupport = false;
     uint32_t i = 0;
     for(const auto& queueFamilyProperty : queueFamilyProperties)
     {
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, vkSurfaceKHR, &presentSupport);
+
         if(queueFamilyProperty.queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
             queueFamilyIndices.graphicsFamily = i;
+        }
+
+        if(presentSupport)
+        {
+            queueFamilyIndices.presentFamily = i;
         }
 
         if(queueFamilyIndices.IsComplete())
@@ -168,21 +177,31 @@ const bool vkApplication::isDeviceSupportingRequirements(const VkPhysicalDevice&
     return queueFamilyIndices.IsComplete();
 }
 
-
 void vkApplication::createLogicalDevice()
 {
     QueueFamilyIndices queueFamilyIndices = GetQueueFamilies(vkPhysicalDevice);
+    std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos = {};
+
+    std::set<uint32_t> uniqueQueueFamilies = {
+        queueFamilyIndices.graphicsFamily.value(),
+        queueFamilyIndices.presentFamily.value()
+    };
+
     float queuePriority = 1.0f;
 
-    VkDeviceQueueCreateInfo deviceQueueCreateInfo
+    for (uint32_t queueFamily : uniqueQueueFamilies)
     {
-        VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-        nullptr,
-        NULL,
-        queueFamilyIndices.graphicsFamily.value(),
-        1,
-        &queuePriority
-    };
+        VkDeviceQueueCreateInfo deviceQueueCreateInfo
+        {
+            VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+            nullptr,
+            NULL,
+            queueFamily,
+            1,
+            &queuePriority
+        };
+        deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+    }
 
     VkPhysicalDeviceFeatures physicalDeviceFeatures = {};
 
@@ -191,8 +210,8 @@ void vkApplication::createLogicalDevice()
         VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         nullptr,
         NULL,
-        1,
-        &deviceQueueCreateInfo,
+        static_cast<uint32_t>(deviceQueueCreateInfos.size()),
+        deviceQueueCreateInfos.data(),
         0,
         nullptr,
         0,
@@ -212,12 +231,22 @@ void vkApplication::createLogicalDevice()
     }
 
     vkGetDeviceQueue(vkLogicalDevice, queueFamilyIndices.graphicsFamily.value(), 0, &graphicsQueue);
+    vkGetDeviceQueue(vkLogicalDevice, queueFamilyIndices.presentFamily.value(), 0, &presentQueue);
+}
+
+void vkApplication::createSurface()
+{
+    if(glfwCreateWindowSurface(vkInstance, window, nullptr, &vkSurfaceKHR) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Surface: Failed to create window surface!");
+    }
 }
 
 void vkApplication::initVulkan()
 {
     createInstance();
     setupDebugMessenger();
+    createSurface();
     findPhysicalDevice();
     createLogicalDevice();
 }
@@ -258,7 +287,7 @@ void vkApplication::createInstance()
 
     if(validationLayersEnabled)
     {
-        PopulateDebugMessengerCreateInfo(vkDebugUtilsMessengerCreateInfo);
+        populateDebugMessengerCreateInfo(vkDebugUtilsMessengerCreateInfo);
         vkInstanceCreateInfo.pNext = static_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&vkDebugUtilsMessengerCreateInfo);
         vkInstanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         vkInstanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
@@ -295,8 +324,10 @@ void vkApplication::cleanup()
 
     if(validationLayersEnabled)
     {
-        DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
+        destroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
     }
+
+    vkDestroySurfaceKHR(vkInstance, vkSurfaceKHR, nullptr);
 
     vkDestroyInstance(vkInstance, nullptr);
 

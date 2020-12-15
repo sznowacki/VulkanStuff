@@ -28,14 +28,18 @@ private:
     struct QueueFamilyIndices
     {
         std::optional<uint32_t> graphicsFamily;
+        std::optional<uint32_t> presentFamily;
+
         const bool IsComplete() const
         {
-            return graphicsFamily.has_value();
+            return (graphicsFamily.has_value() && presentFamily.has_value());
         }
     };
 
     VkDevice vkLogicalDevice = nullptr;
     VkQueue graphicsQueue = nullptr;
+    VkSurfaceKHR vkSurfaceKHR = nullptr;
+    VkQueue presentQueue = nullptr;
 
     //Window
     void initWindow();
@@ -52,6 +56,9 @@ private:
 
     //Logical Device
     void createLogicalDevice();
+
+    //Surface
+    void createSurface();
 
     //Base
     void initVulkan();
