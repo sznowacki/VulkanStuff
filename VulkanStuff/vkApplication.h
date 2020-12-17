@@ -3,32 +3,32 @@
 class vkApplication
 {
 public:
-    void run();
+    void                                run();
 
 private:
     //Window
-    GLFWwindow* window = nullptr;
-    const uint32_t WINDOW_WIDTH = 800;
-    const uint32_t WINDOW_HEIGHT = 600;
-    VkDebugUtilsMessengerEXT debugMessenger = nullptr;
+    GLFWwindow*                         window                      = nullptr;
+    const uint32_t                      WINDOW_WIDTH                = 800;
+    const uint32_t                      WINDOW_HEIGHT               = 600;
+    VkDebugUtilsMessengerEXT            vkDebugMessenger            = nullptr;
 
     //Validation Layers
-    const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
+    const std::vector<const char*>      vkValidationLayers          = { "VK_LAYER_KHRONOS_validation" };
 
 #ifdef NDEBUG
-    const bool validationLayersEnabled = false;
+    const bool                          vkValidationLayersEnabled   = false;
 #else
-    const bool validationLayersEnabled = true;
+    const bool                          vkValidationLayersEnabled   = true;
 #endif
 
     //VkMembers
-    VkInstance vkInstance = nullptr;
-    VkPhysicalDevice vkPhysicalDevice = nullptr;
+    VkInstance                          vkInstance                  = nullptr;
+    VkPhysicalDevice                    vkPhysicalDevice            = nullptr;
 
     struct QueueFamilyIndices
     {
-        std::optional<uint32_t> graphicsFamily;
-        std::optional<uint32_t> presentFamily;
+        std::optional<uint32_t>         graphicsFamily;
+        std::optional<uint32_t>         presentFamily;
 
         const bool IsComplete() const
         {
@@ -36,33 +36,57 @@ private:
         }
     };
 
-    VkDevice vkLogicalDevice = nullptr;
-    VkQueue graphicsQueue = nullptr;
-    VkSurfaceKHR vkSurfaceKHR = nullptr;
-    VkQueue presentQueue = nullptr;
+    VkDevice                            vkLogicalDevice             = nullptr;
+    VkQueue                             vkGraphicsQueue             = nullptr;
+    VkQueue                             vkPresentQueue              = nullptr;
+    VkSurfaceKHR                        vkSurface                   = nullptr;
+
+    const std::vector<const char*>      deviceExtensions            = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+
+    struct SwapchainSupportDetails
+    {
+        VkSurfaceCapabilitiesKHR        vkSurfaceCapabilities       = {};
+        std::vector<VkSurfaceFormatKHR> vkFormats                   = {};
+        std::vector<VkPresentModeKHR>   vkPresentModes              = {};
+    };
+
+    //Swapchain
+    VkSwapchainKHR                      vkSwapchainKHR              = nullptr;
+    std::vector<VkImage>                vkSwapchainImages           = {};
+    VkFormat                            vkSwapchainImageFormat      = VK_FORMAT_UNDEFINED;
+    VkExtent2D                          vkSwapchainExtent           = {0,0};
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //Window
-    void initWindow();
-    const bool checkValidationLayersSupport() const;
-    const std::vector<const char*> getRequiredExtensions() const;
-    void setupDebugMessenger();
+    void                                initWindow();
+    bool                                checkValidationLayersSupport()                                                          const;
+    const std::vector<const char*>      getRequiredExtensions()                                                                 const;
+    void                                setupDebugMessenger();
 
     //Physical Device
-    void findPhysicalDevice();
-    const uint32_t getPhysicalDeviceScore(const VkPhysicalDevice& physicalDevice) const;
-    const QueueFamilyIndices GetQueueFamilies(const VkPhysicalDevice& physicalDevice) const;
-    const bool isDeviceSupportingRequirements(const VkPhysicalDevice& physicalDevice) const;
-    
+    void                                findPhysicalDevice();
+    const uint32_t                      getPhysicalDeviceScore(const VkPhysicalDevice& physicalDevice)                          const;
+    const QueueFamilyIndices            getQueueFamilies(const VkPhysicalDevice& physicalDevice)                                const;
+    bool                                isDeviceSupportingRequirements(const VkPhysicalDevice& physicalDevice)                  const;
 
     //Logical Device
-    void createLogicalDevice();
+    void                                createLogicalDevice();
 
     //Surface
-    void createSurface();
+    void                                createSurface();
+
+    //Swapchain
+    bool                                checkDeviceExtensionsSupport(const VkPhysicalDevice& physicalDevice)                    const;
+    const SwapchainSupportDetails       querySwapchainSupport(VkPhysicalDevice physicalDevice)                                  const;
+    const VkSurfaceFormatKHR            chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)        const;
+    const VkPresentModeKHR              chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)       const;
+    const VkExtent2D                    chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities)                   const;
+    void                                createSwapchain();
 
     //Base
-    void initVulkan();
-    void createInstance();
-    void mainLoop();
-    void cleanup();
+    void                                initVulkan();
+    void                                createInstance();
+    void                                mainLoop();
+    void                                cleanup();
 };
