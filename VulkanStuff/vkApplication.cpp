@@ -220,8 +220,8 @@ void vkApplication::createLogicalDevice()
         deviceQueueCreateInfos.data(),
         0,
         nullptr,
-        static_cast<uint32_t>(deviceExtensions.size()),
-        deviceExtensions.data(),
+        static_cast<uint32_t>(vkDeviceExtensions.size()),
+        vkDeviceExtensions.data(),
         &physicalDeviceFeatures
     };
 
@@ -257,7 +257,7 @@ bool vkApplication::checkDeviceExtensionsSupport(const VkPhysicalDevice& physica
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
-    std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+    std::set<std::string> requiredExtensions(vkDeviceExtensions.begin(), vkDeviceExtensions.end());
 
     for (const auto& availableExtension : availableExtensions)
     {
@@ -413,6 +413,30 @@ void vkApplication::createSwapchain()
     vkSwapchainExtent = extent;
 }
 
+void vkApplication::createImageViews()
+{
+    vkSwapchainImageViews.resize(vkSwapchainImages.size());
+
+    for(size_t i = 0; i < vkSwapchainImages.size(); ++i)
+    {
+        VkImageViewCreateInfo imageViewCreateInfo = {
+            VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            nullptr,
+            NULL,
+            vkSwapchainImages[i],
+            VK_IMAGE_VIEW_TYPE_2D,
+            vkSwapchainImageFormat,
+            {VK_COMPONENT_SWIZZLE_IDENTITY,VK_COMPONENT_SWIZZLE_IDENTITY,VK_COMPONENT_SWIZZLE_IDENTITY,VK_COMPONENT_SWIZZLE_IDENTITY},
+            {VK_IMAGE_ASPECT_COLOR_BIT, 0,1,0,1}
+        };
+
+        if(vkCreateImageView(vkLogicalDevice, &imageViewCreateInfo, nullptr, &vkSwapchainImageViews[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Image Views: Failed to create image views!");
+        }
+    }
+}
+
 void vkApplication::initVulkan()
 {
     createInstance();
@@ -421,6 +445,7 @@ void vkApplication::initVulkan()
     findPhysicalDevice();
     createLogicalDevice();
     createSwapchain();
+    createImageViews();
 }
 
 void vkApplication::createInstance()
@@ -492,6 +517,11 @@ void vkApplication::mainLoop()
 
 void vkApplication::cleanup()
 {
+    for(auto swapchainImageView : vkSwapchainImageViews)
+    {
+        vkDestroyImageView(vkLogicalDevice, swapchainImageView, nullptr);
+    }
+
     vkDestroySwapchainKHR(vkLogicalDevice, vkSwapchainKHR, nullptr);
 
     vkDestroyDevice(vkLogicalDevice, nullptr);

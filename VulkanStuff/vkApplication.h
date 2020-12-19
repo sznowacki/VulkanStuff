@@ -41,7 +41,7 @@ private:
     VkQueue                             vkPresentQueue              = nullptr;
     VkSurfaceKHR                        vkSurface                   = nullptr;
 
-    const std::vector<const char*>      deviceExtensions            = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    const std::vector<const char*>      vkDeviceExtensions          = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
     struct SwapchainSupportDetails
     {
@@ -55,6 +55,9 @@ private:
     std::vector<VkImage>                vkSwapchainImages           = {};
     VkFormat                            vkSwapchainImageFormat      = VK_FORMAT_UNDEFINED;
     VkExtent2D                          vkSwapchainExtent           = {0,0};
+
+    //Image View
+    std::vector<VkImageView>            vkSwapchainImageViews       = {};
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -83,6 +86,9 @@ private:
     const VkPresentModeKHR              chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)       const;
     const VkExtent2D                    chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities)                   const;
     void                                createSwapchain();
+
+    //Image View
+    void                                createImageViews();
 
     //Base
     void                                initVulkan();
