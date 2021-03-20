@@ -90,6 +90,10 @@ private:
     //Image View
     void                                createImageViews();
 
+    //Graphics Pipeline
+    void                                createGraphicsPipeline();
+    VkShaderModule                      createShaderModule(const std::vector<char>& code);
+
     //Base
     void                                initVulkan();
     void                                createInstance();

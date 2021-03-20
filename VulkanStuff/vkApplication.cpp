@@ -437,6 +437,86 @@ void vkApplication::createImageViews()
     }
 }
 
+static std::vector<char> readFile(const std::string& filename)
+{
+    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+    if (!file.is_open())
+    {
+        throw std::runtime_error("failed to open file!");
+    }
+
+    size_t fileSize = (size_t)file.tellg();
+    std::vector<char> buffer(fileSize);
+
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+
+    file.close();
+
+    return buffer;
+}
+
+VkShaderModule vkApplication::createShaderModule(const std::vector<char>& code)
+{
+    VkShaderModuleCreateInfo createInfo
+    {
+        VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+        nullptr,
+        NULL,
+        code.size(),
+        reinterpret_cast<const uint32_t*>(code.data())
+    };
+
+    VkShaderModule shaderModule;
+    if (vkCreateShaderModule(vkLogicalDevice, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create shader module!");
+    }
+
+    return shaderModule;
+}
+
+void vkApplication::createGraphicsPipeline()
+{
+    auto vertShaderCode = readFile("Shaders/vert.spv");
+    auto fragShaderCode = readFile("Shaders/frag.spv");
+
+    VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+    VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+
+    VkPipelineShaderStageCreateInfo vertShaderStageInfo
+    {
+        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        nullptr,
+        NULL,
+        VK_SHADER_STAGE_VERTEX_BIT,
+        vertShaderModule,
+        "main",
+        nullptr
+    };
+
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo
+    {
+        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        nullptr,
+        NULL,
+        VK_SHADER_STAGE_FRAGMENT_BIT,
+        fragShaderModule,
+        "main",
+        nullptr
+    };
+
+    VkPipelineShaderStageCreateInfo shaderStages[] =
+    {
+        vertShaderStageInfo,
+        fragShaderStageInfo
+    };
+
+    vkDestroyShaderModule(vkLogicalDevice, fragShaderModule, nullptr);
+    vkDestroyShaderModule(vkLogicalDevice, vertShaderModule, nullptr);
+}
+
 void vkApplication::initVulkan()
 {
     createInstance();
@@ -446,6 +526,7 @@ void vkApplication::initVulkan()
     createLogicalDevice();
     createSwapchain();
     createImageViews();
+    createGraphicsPipeline();
 }
 
 void vkApplication::createInstance()
