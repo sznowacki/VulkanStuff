@@ -59,6 +59,15 @@ private:
     //Image View
     std::vector<VkImageView>            vkSwapchainImageViews       = {};
 
+    //Render Pass
+    VkRenderPass                        vkRenderPass                = {};
+
+    //Pipeline Layout
+    VkPipelineLayout                    vkPipelineLayout            = {};
+
+    //Graphics Pipeline
+    VkPipeline                          vkGraphicsPipeline          = {};
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //Window
@@ -93,6 +102,9 @@ private:
     //Graphics Pipeline
     void                                createGraphicsPipeline();
     VkShaderModule                      createShaderModule(const std::vector<char>& code);
+
+    //Render Pass
+    void                                createRenderPass();
 
     //Base
     void                                initVulkan();
