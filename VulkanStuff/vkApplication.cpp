@@ -413,6 +413,12 @@ void vkApplication::createSwapchain()
     vkSwapchainExtent = extent;
 }
 
+/// <summary>
+/// VkImageView object creation is needed to use any VkImage (including those in the swap chain) in the render pipeline.
+/// 
+/// An ImageView is a view into an image, it describes how to access the image and which part of the image to access.
+/// It also describe how it should be treated, for example as a 2D texture depth texture without any mipmapping levels.
+/// </summary>
 void vkApplication::createImageViews()
 {
     vkSwapchainImageViews.resize(vkSwapchainImages.size());
@@ -536,7 +542,8 @@ void vkApplication::createGraphicsPipeline()
     // Describe the format of the vertex data that will be passed to the vertex shader
     // Binding description: spacing between data and wheather the data is per-vertex or per-instance
     // Attribute description: type of the atributes passed to the vertex shader
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo{
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo
+    {
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         nullptr,
         NULL,
@@ -547,7 +554,8 @@ void vkApplication::createGraphicsPipeline()
     };
 
     // Describe what kind of geometry will be drawn from the vertices and if primitive restart should be enabled
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly{
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly
+    {
         VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
         nullptr,
         NULL,
@@ -557,7 +565,8 @@ void vkApplication::createGraphicsPipeline()
 
     // A viewport describes the region of the framebuffer that the output will be rendered to.
     // The minDepth and maxDepth values specify the range of depth values to use for the framebuffer.
-    VkViewport viewport{
+    VkViewport viewport
+    {
         0.0f,
         0.0f,
         static_cast<float>(vkSwapchainExtent.width),
@@ -568,13 +577,15 @@ void vkApplication::createGraphicsPipeline()
 
     // Scissor rectangles define in which regions pixels will actually be stored.
     // Any pixels outside the scissor rectangles will be discarded by the rasterizer.
-    VkRect2D scissor{
+    VkRect2D scissor
+    {
         { 0, 0 },
         vkSwapchainExtent
     };
 
     // Combine viewport and scissor rectangle.
-    VkPipelineViewportStateCreateInfo viewportState{
+    VkPipelineViewportStateCreateInfo viewportState
+    {
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
         nullptr,
         NULL,
@@ -585,7 +596,8 @@ void vkApplication::createGraphicsPipeline()
     };
 
     // The rasterizer takes the geometry shaped by the vertices from the vertex shader and turns it into fragments to be colored by the fragment shader.
-    VkPipelineRasterizationStateCreateInfo rasterizer{
+    VkPipelineRasterizationStateCreateInfo rasterizer
+    {
         VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
         nullptr,
         NULL,
@@ -602,7 +614,8 @@ void vkApplication::createGraphicsPipeline()
     };
 
     // Configure multisampling to perform anti-aliasing.
-    VkPipelineMultisampleStateCreateInfo multisampling{
+    VkPipelineMultisampleStateCreateInfo multisampling
+    {
         VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
         nullptr,
         NULL,
@@ -616,7 +629,8 @@ void vkApplication::createGraphicsPipeline()
 
     // Combine color returned from fragment shader with the color that is already in the framebuffer.
     // Configure settings per attached framebuffer
-    VkPipelineColorBlendAttachmentState colorBlendAttachment{
+    VkPipelineColorBlendAttachmentState colorBlendAttachment
+    {
         VK_FALSE,
         VK_BLEND_FACTOR_ONE,
         VK_BLEND_FACTOR_ZERO,
@@ -628,7 +642,8 @@ void vkApplication::createGraphicsPipeline()
     };
 
     // Configure global color blending settings.
-    VkPipelineColorBlendStateCreateInfo colorBlending{
+    VkPipelineColorBlendStateCreateInfo colorBlending
+    {
         VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
         nullptr,
         NULL,
@@ -640,12 +655,14 @@ void vkApplication::createGraphicsPipeline()
     };
 
     // Specify states which can changed without recreating the pipeline.
-    VkDynamicState dynamicStates[] = {
+    VkDynamicState dynamicStates[] = 
+    {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_LINE_WIDTH
     };
 
-    VkPipelineDynamicStateCreateInfo dynamicState{
+    VkPipelineDynamicStateCreateInfo dynamicState
+    {
         VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
         nullptr,
         NULL,
@@ -655,7 +672,8 @@ void vkApplication::createGraphicsPipeline()
 
     // Create VkPipelineLayout object to store uniform values which can be used to pass
     // transformation matrix to the vertex shader, or to create texture samplers in the fragment shader
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo
+    {
         VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         nullptr,
         NULL,
@@ -665,13 +683,15 @@ void vkApplication::createGraphicsPipeline()
         nullptr
     };
 
-    if (vkCreatePipelineLayout(vkLogicalDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(vkLogicalDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout) != VK_SUCCESS) 
+    {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 
     // Having all of the above: shader stages, fixed-function states, pipeline layout, render pass
     // we can combine them to create the graphics pipeline
-    VkGraphicsPipelineCreateInfo pipelineInfo{
+    VkGraphicsPipelineCreateInfo pipelineInfo
+    {
         VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         nullptr,
         NULL,
@@ -696,7 +716,8 @@ void vkApplication::createGraphicsPipeline()
         -1
     };
 
-    if (vkCreateGraphicsPipelines(vkLogicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkGraphicsPipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(vkLogicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkGraphicsPipeline) != VK_SUCCESS) 
+    {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
@@ -711,7 +732,8 @@ void vkApplication::createGraphicsPipeline()
 /// </summary>
 void vkApplication::createRenderPass()
 {
-    VkAttachmentDescription colorAttachment{
+    VkAttachmentDescription colorAttachment
+    {
         NULL,
         vkSwapchainImageFormat,
         VK_SAMPLE_COUNT_1_BIT,
@@ -728,14 +750,16 @@ void vkApplication::createRenderPass()
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
     };
 
-    VkAttachmentReference colorAttachmentRef{
+    VkAttachmentReference colorAttachmentRef
+    {
         0,
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     };
 
     // A single render pass can consist of multiple subpasses which are subsequent rendering
     // operations that depend on the contents of framebuffers in previous passes
-    VkSubpassDescription subpass{
+    VkSubpassDescription subpass
+    {
         NULL,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         0,
@@ -748,15 +772,61 @@ void vkApplication::createRenderPass()
         nullptr
     };
 
-    VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpass;
+    VkRenderPassCreateInfo renderPassInfo
+    {
+        VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        nullptr,
+        NULL,
+        1,
+        &colorAttachment,
+        1,
+        &subpass,
+        0,
+        nullptr
+    };
 
-    if (vkCreateRenderPass(vkLogicalDevice, &renderPassInfo, nullptr, &vkRenderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(vkLogicalDevice, &renderPassInfo, nullptr, &vkRenderPass) != VK_SUCCESS) 
+    {
         throw std::runtime_error("failed to create render pass!");
+    }
+}
+
+/// <summary>
+/// Framebuffer object is an wrapper for attachments specified during Renderpass creation.
+/// It references all of the VkImageView objects that represent the attachments, for example: the color attachment.
+/// 
+/// Image that we have to use for the attachment depends on which image the swapchain returns when we retrieve
+/// one for presentation. That means that we have to create a framebuffer for all of the images in the swap chain
+/// and use the one that corresponds to the retrieved image at drawing time.
+/// </summary>
+void vkApplication::createFramebuffers()
+{
+    vkSwapchainFramebuffers.resize(vkSwapchainImageViews.size());
+
+    for (size_t i = 0; i < vkSwapchainImageViews.size(); ++i)
+    {
+        VkImageView attachments[] =
+        {
+            vkSwapchainImageViews[i]
+        };
+
+        VkFramebufferCreateInfo framebufferInfo =
+        {
+            VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+            nullptr,
+            NULL,
+            vkRenderPass,
+            1,
+            attachments,
+            vkSwapchainExtent.width,
+            vkSwapchainExtent.height,
+            1
+        };
+
+        if (vkCreateFramebuffer(vkLogicalDevice, &framebufferInfo, nullptr, &vkSwapchainFramebuffers[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create framebuffer!");
+        }
     }
 }
 
@@ -772,6 +842,7 @@ void vkApplication::initVulkan()
     createImageViews();
     createRenderPass();
     createGraphicsPipeline();
+    createFramebuffers();
 }
 
 void vkApplication::createInstance()
@@ -843,6 +914,11 @@ void vkApplication::mainLoop()
 
 void vkApplication::cleanup()
 {
+    for (auto framebuffer : vkSwapchainFramebuffers) 
+    {
+        vkDestroyFramebuffer(vkLogicalDevice, framebuffer, nullptr);
+    }
+
     vkDestroyPipeline(vkLogicalDevice, vkGraphicsPipeline, nullptr);
 
     vkDestroyPipelineLayout(vkLogicalDevice, vkPipelineLayout, nullptr);

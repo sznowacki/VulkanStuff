@@ -68,6 +68,9 @@ private:
     //Graphics Pipeline
     VkPipeline                          vkGraphicsPipeline          = {};
 
+    //Framebuffer
+    std::vector<VkFramebuffer>          vkSwapchainFramebuffers     = {};
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //Window
@@ -105,6 +108,9 @@ private:
 
     //Render Pass
     void                                createRenderPass();
+
+    //Framebuffer
+    void                                createFramebuffers();
 
     //Base
     void                                initVulkan();
