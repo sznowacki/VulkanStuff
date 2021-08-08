@@ -60,16 +60,20 @@ private:
     std::vector<VkImageView>            vkSwapchainImageViews       = {};
 
     //Render Pass
-    VkRenderPass                        vkRenderPass                = {};
+    VkRenderPass                        vkRenderPass                = nullptr;
 
     //Pipeline Layout
-    VkPipelineLayout                    vkPipelineLayout            = {};
+    VkPipelineLayout                    vkPipelineLayout            = nullptr;
 
     //Graphics Pipeline
-    VkPipeline                          vkGraphicsPipeline          = {};
+    VkPipeline                          vkGraphicsPipeline          = nullptr;
 
     //Framebuffer
     std::vector<VkFramebuffer>          vkSwapchainFramebuffers     = {};
+
+    //Commandbuffer
+    VkCommandPool                       vkCommandPool               = nullptr;
+    std::vector<VkCommandBuffer>        vkCommandBuffers            = {};
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -111,6 +115,10 @@ private:
 
     //Framebuffer
     void                                createFramebuffers();
+
+    //Command Buffers
+    void                                createCommandPool();
+    void                                createCommandBuffer();
 
     //Base
     void                                initVulkan();
