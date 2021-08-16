@@ -937,6 +937,119 @@ void vkApplication::createCommandBuffer()
 
 }
 
+/// <summary>
+/// The drawFrame function will perform the following operations:
+/// - Acquire an image from the swap chain
+/// - Execute the command buffer with that image as attachment in the framebuffer
+/// - Return the image to the swap chain for presentation
+/// 
+/// Each of these function call are executed asynchronously and each of the operations depends on the previous one finishing./// 
+/// </summary>
+void vkApplication::drawFrame()
+{
+    // Acquire an Image from the swap chain
+
+    uint32_t imageIndex; // refers to VkImage in vkSwapchainImages array, and will be used to pich right command buffer
+    vkAcquireNextImageKHR(vkLogicalDevice, vkSwapchainKHR, UINT64_MAX, vkSemaphoreImageAvailable, VK_NULL_HANDLE, &imageIndex);
+
+    // Submitting the command buffer to the graphics queue
+
+    VkSemaphore waitSemaphore[] = { vkSemaphoreImageAvailable };
+
+    VkPipelineStageFlags waitStage[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+    VkSemaphore signalSemaphores[] = { vkSemaphoreRenderFinished };
+
+    VkSubmitInfo submitInfo
+    {
+        VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        nullptr,
+        // Specify which semaphores to wait on before execution begins and in which stage(s) of the pipeline to wait.
+        // Each entry in the waitStages array corresponds to the semaphore with the same index in waitSemaphores.
+        1,
+        waitSemaphore,
+        waitStage,
+        // Specify which command buffer to sumbit for excecution - should be command buffer that binds the swap chain
+        // image recently acquired as color attachment.
+        1,
+        &vkCommandBuffers[imageIndex],
+        // Specify which semaphores to signal once the command buffer(s) have finished execution.
+        1,
+        signalSemaphores
+    };
+
+    // The last parameter for fence is VK_NULL_HANDLE as we use semaphores for synchronization.
+    if (vkQueueSubmit(vkGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) 
+    {
+        throw std::runtime_error("failed to submit draw command buffer!");
+    }
+
+    // Subpass dependencies :
+    // Subpasses in a render pass automatically take care of image layout transitions. These transitions are controlled
+    // by subpass dependencies, which specify memory and execution dependencies between subpasses.
+    VkSubpassDependency subpassDependency
+    {
+        VK_SUBPASS_EXTERNAL,
+        0,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        0,
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        NULL
+    };
+
+    // Presentation :
+    // The last step of drawing a frame is submitting the result back to the swap chain to have it eventually show up on the screen.    // 
+    // Last parameter - pResults allows you to specify an array of VkResult values to check for every individual swap chain
+    // if presentation was successful.
+
+    VkSwapchainKHR swapChains[] = { vkSwapchainKHR };
+
+    VkPresentInfoKHR presentInfo
+    {
+        VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        nullptr,
+        // Specify which semaphores to wait on before presentation.
+        1,
+        signalSemaphores,
+        // Specify the swap chains to present images to and the index of the image for each swap chain.
+        1,
+        swapChains,
+        &imageIndex,
+        nullptr
+    };
+
+    // The vkQueuePresentKHR function submits the request to present an image to the swap chain.
+    vkQueuePresentKHR(vkPresentQueue, &presentInfo);
+}
+
+/// <summary>
+// There are two ways of synchronizing swap chain events : fences and semaphores.
+// 
+// Both of them can be used for coordinating operations by having one operation signal and another operation wait
+// for a fence or semaphore to go from the unsignaled to signaled state.
+// 
+// The difference is that the state of fences can be accessed from your program using calls like 
+// vkWaitForFencesand semaphores cannot be.
+// 
+// Fences are mainly designed to synchronize your application itself with rendering operation.
+// Semaphores are used to synchronize operations within or across command queues.
+/// </summary>
+void vkApplication::createSemaphores()
+{
+    VkSemaphoreCreateInfo semaphoreCreateInfo = 
+    {
+        VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        nullptr,
+        NULL
+    };
+
+    if (vkCreateSemaphore(vkLogicalDevice, &semaphoreCreateInfo, nullptr, &vkSemaphoreImageAvailable) != VK_SUCCESS
+        || vkCreateSemaphore(vkLogicalDevice, &semaphoreCreateInfo, nullptr, &vkSemaphoreRenderFinished) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create semaphores!");
+    }
+}
 
 void vkApplication::initVulkan()
 {
@@ -952,6 +1065,7 @@ void vkApplication::initVulkan()
     createFramebuffers();
     createCommandPool();
     createCommandBuffer();
+    createSemaphores();
 }
 
 void vkApplication::createInstance()
@@ -1017,12 +1131,20 @@ void vkApplication::mainLoop()
     while(!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
+        drawFrame();
     }
-}
 
+    // All of the operations in drawFrame are asynchronous. While exiting the loop, drawing and presentation operations
+    // may still be going on. Instead of cleaning right now we need to wait for the logical device to finish operations
+    // before exiting mainLoop and destroying the window.
+    vkDeviceWaitIdle(vkLogicalDevice);
+}
 
 void vkApplication::cleanup()
 {
+    vkDestroySemaphore(vkLogicalDevice, vkSemaphoreRenderFinished, nullptr);
+    vkDestroySemaphore(vkLogicalDevice, vkSemaphoreImageAvailable, nullptr);
+
     vkDestroyCommandPool(vkLogicalDevice, vkCommandPool, nullptr);
 
     for (auto framebuffer : vkSwapchainFramebuffers) 

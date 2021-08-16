@@ -75,6 +75,10 @@ private:
     VkCommandPool                       vkCommandPool               = nullptr;
     std::vector<VkCommandBuffer>        vkCommandBuffers            = {};
 
+    //Semaphores
+    VkSemaphore                         vkSemaphoreImageAvailable   = nullptr;
+    VkSemaphore                         vkSemaphoreRenderFinished   = nullptr;
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //Window
@@ -119,6 +123,12 @@ private:
     //Command Buffers
     void                                createCommandPool();
     void                                createCommandBuffer();
+
+    //Sempahores
+    void                                createSemaphores();
+
+    //Draw
+    void                                drawFrame();
 
     //Base
     void                                initVulkan();
